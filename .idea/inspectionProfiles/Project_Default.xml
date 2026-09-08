@@ -1,0 +1,97 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="annotated-types" />
+          <option value="anyio" />
+          <option value="archspec" />
+          <option value="backports.zstd" />
+          <option value="boltons" />
+          <option value="Brotli" />
+          <option value="build" />
+          <option value="cached-property" />
+          <option value="certifi" />
+          <option value="cffi" />
+          <option value="charset-normalizer" />
+          <option value="colorama" />
+          <option value="conda" />
+          <option value="conda_index" />
+          <option value="conda-libmamba-solver" />
+          <option value="conda-lockfiles" />
+          <option value="conda-package-handling" />
+          <option value="conda_package_streaming" />
+          <option value="conda-pypi" />
+          <option value="conda-rattler-solver" />
+          <option value="conda-self" />
+          <option value="distro" />
+          <option value="docopt" />
+          <option value="exceptiongroup" />
+          <option value="filelock" />
+          <option value="frozendict" />
+          <option value="h11" />
+          <option value="h2" />
+          <option value="hpack" />
+          <option value="httpcore" />
+          <option value="httpx" />
+          <option value="hyperframe" />
+          <option value="idna" />
+          <option value="importlib_metadata" />
+          <option value="installer" />
+          <option value="Jinja2" />
+          <option value="jsonpatch" />
+          <option value="jsonpointer" />
+          <option value="libmambapy" />
+          <option value="MarkupSafe" />
+          <option value="menuinst" />
+          <option value="msgpack" />
+          <option value="packaging" />
+          <option value="pip" />
+          <option value="pipreqs" />
+          <option value="platformdirs" />
+          <option value="pluggy" />
+          <option value="py-rattler" />
+          <option value="pycosat" />
+          <option value="pycparser" />
+          <option value="pydantic" />
+          <option value="pydantic_core" />
+          <option value="pyproject_hooks" />
+          <option value="PySocks" />
+          <option value="requests" />
+          <option value="ruamel.yaml" />
+          <option value="ruamel.yaml.clib" />
+          <option value="setuptools" />
+          <option value="sniffio" />
+          <option value="tomli" />
+          <option value="tqdm" />
+          <option value="truststore" />
+          <option value="typing_extensions" />
+          <option value="typing-inspection" />
+          <option value="unearth" />
+          <option value="urllib3" />
+          <option value="uv" />
+          <option value="win_inet_pton" />
+          <option value="yarg" />
+          <option value="zipp" />
+          <option value="zstandard" />
+          <option value="torch" />
+          <option value="insightface" />
+          <option value="onnxruntime" />
+          <option value="numpy" />
+          <option value="opencv-python" />
+          <option value="scikit-learn" />
+          <option value="matplotlib" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyStubPackagesAdvertiser" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="pandas" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
