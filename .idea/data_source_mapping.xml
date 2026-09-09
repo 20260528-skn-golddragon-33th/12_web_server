@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/_03_django_orm/sql/product_data.sql" value="d3b87920-f58a-4aad-ab3e-4ad3f50bf65d" />
+    <file url="file://$PROJECT_DIR$/_03_django_orm/sql/setup.sql" value="9a10be02-61bc-4053-b3d8-2216af97c799" />
+  </component>
+</project>
