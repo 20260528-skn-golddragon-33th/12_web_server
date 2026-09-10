@@ -1,11 +1,13 @@
-from django.contrib import auth
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
-from .forms import UserForm
+from .forms import ProfileForm, UserForm
 from .models import UserDetail
+from django.contrib import auth, messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
 
 
 @require_POST
@@ -38,3 +40,32 @@ def check_username(request):
     # 이 JSON은 입력 중 안내용이다. 가입 순간의 중복 여부는 UserForm이 다시 검사한다.
     username = request.GET.get('username', '').strip()
     return JsonResponse({'available': len(username) >= 4 and not User.objects.filter(username=username).exists()})
+
+@login_required(login_url='uauth:login')
+@require_http_methods(['GET', 'POST'])
+def password_change(request):
+    # 현재 비밀번호와 새 비밀번호 두 입력의 검증을 Django 기본 폼에 맡긴다.
+    form = PasswordChangeForm(request.user, request.POST if request.method == 'POST' else None)
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        # 변경된 비밀번호 해시를 현재 세션에도 반영해 이 브라우저의 로그인을 유지한다.
+        auth.update_session_auth_hash(request, user)
+        messages.success(request, '비밀번호를 변경했습니다.')
+        return redirect('qna:index')
+    return render(request, 'uauth/password_change.html', {'form': form})
+
+@login_required(login_url='uauth:login')
+@require_http_methods(['GET', 'POST'])
+def profile_edit(request):
+    # URL이나 폼의 사용자 번호를 받지 않고 로그인한 본인의 프로필만 조회한다.
+    detail = UserDetail.objects.filter(user=request.user).first()
+    if detail is None:
+        detail = UserDetail(user=request.user)  # GET에서는 저장하지 않고 POST 검증 성공 시 생성한다.
+    form = ProfileForm(request.POST if request.method == 'POST' else None,
+                       request.FILES if request.method == 'POST' else None,
+                       instance=detail)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, '프로필을 수정했습니다.')
+        return redirect('qna:index')
+    return render(request, 'uauth/profile_edit.html', {'form': form})

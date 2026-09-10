@@ -1,11 +1,63 @@
 {% extends 'layout/base.html' %}
-
+{% load static %}
 {% block content %}
-<div class="container my-3">
-    <h1>{{ question.subject }}</h1>
-    <p>작성자: {{ question.author|default:'탈퇴한 사용자' }}</p>
-    <p>작성일: {{ question.created_at|date:'Y-m-d H:i' }}</p>
-    <div class="border rounded p-3">{{ question.content|linebreaksbr }}</div>
-    <a class="btn btn-secondary mt-3" href="{% url 'qna:index' %}">목록으로</a>
+<div class="container my-3" id="question-detail"
+     data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+     data-login-url="{% url 'uauth:login' %}?next={{ request.path|urlencode }}">
+  <h1>#{{ question.pk }} {{ question.subject }}</h1>
+  <p>작성자: {{ question.author.username|default:'탈퇴한 사용자' }}</p>
+  <div style="white-space: pre-line;">{{ question.content }}</div>
+  <button type="button" class="recommend"
+          data-uri="{% url 'qna:question_vote' id=question.pk %}">질문 추천
+    <span>{{ question.voters.count }}</span>
+  </button>
+  {% if request.user == question.author or request.user.is_staff %}
+    <a href="{% url 'qna:question_modify' question.pk %}">질문 수정</a>
+    <form method="post" action="{% url 'qna:question_delete' question.pk %}">
+      {% csrf_token %}
+      <button type="submit">질문 삭제</button>
+    </form>
+  {% endif %}
+  <a href="{% url 'qna:index' %}">목록</a>
+  <h2>답변 {{ question.answers.count }}개</h2>
+  {% for answer in question.answers.all %}
+    <article id="answer_{{ answer.pk }}" class="border my-3 p-3">
+      <p>{{ answer.author.username|default:'탈퇴한 사용자' }}</p>
+      <div style="white-space: pre-line;">{{ answer.content }}</div>
+      <button type="button" class="recommend"
+              data-uri="{% url 'qna:answer_vote' id=answer.pk %}">답변 추천
+        <span>{{ answer.voters.count }}</span>
+      </button>
+      {% if request.user == answer.author or request.user.is_staff %}
+        <form method="post" action="{% url 'qna:answer_modify' answer.pk %}">
+          {% csrf_token %}
+          {% if answer.pk == answer_modify_id %}
+            {{ answer_modify_form.as_p }}
+          {% else %}
+            <label>답변 수정
+              <textarea name="content" required>{{ answer.content }}</textarea>
+            </label>
+          {% endif %}
+          <button type="submit">수정 저장</button>
+        </form>
+        <form method="post" action="{% url 'qna:answer_delete' answer.pk %}">
+          {% csrf_token %}
+          <button type="submit">답변 삭제</button>
+        </form>
+      {% endif %}
+    </article>
+  {% empty %}
+    <p>아직 답변이 없습니다.</p>
+  {% endfor %}
+  <h2>답변 작성</h2>
+  <form name="answerCreateFrm" method="post"
+        action="{% url 'qna:answer_create' question_id=question.pk %}">
+    {% csrf_token %}
+    {{ answer_form.as_p }}
+    <button type="submit">답변 등록</button>
+  </form>
 </div>
 {% endblock content %}
+{% block script %}
+<script src="{% static 'js/qna/question_detail.js' %}"></script>
+{% endblock script %}
