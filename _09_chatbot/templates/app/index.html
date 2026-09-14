@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT 직업상담 챗봇</title>
+    <style>
+        :root {
+            --ink: #1d2b38;
+            --muted: #617080;
+            --line: #dce5e8;
+            --surface: #fff;
+            --canvas: #f3f7f7;
+            --soft: #edf6f5;
+            --blue: #236b8e;
+            --blue-dark: #18546f;
+            --teal: #167d78;
+            --danger: #a33b45;
+            --radius: 16px;
+            --shadow: 0 18px 42px rgba(24, 57, 69, .10);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flow-root;
+            min-width: 0;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--ink);
+            background: var(--canvas);
+            font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        }
+
+        button, textarea {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .app-shell {
+            display: grid;
+            grid-template-columns:248px minmax(0, 1fr);
+            gap: 16px;
+            width: min(1080px, calc(100% - 40px));
+            min-height: calc(100vh - 40px);
+            margin: 20px auto;
+        }
+
+        .sidebar, .chat-panel {
+            min-width: 0;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            padding: 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 24px;
+            color: var(--blue-dark);
+            font-size: .92rem;
+            font-weight: 750;
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            display: grid;
+            width: 28px;
+            height: 28px;
+            place-items: center;
+            border-radius: 8px;
+            color: #fff;
+            background: var(--teal);
+            font-size: .82rem;
+        }
+
+        .sidebar-heading {
+            margin: 0 0 8px;
+            color: var(--muted);
+            font-size: .74rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+
+        #conversation-list {
+            display: grid;
+            gap: 5px;
+            overflow-y: auto;
+            max-height: min(52vh, 420px);
+        }
+
+        .conversation-link {
+            display: block;
+            overflow: hidden;
+            padding: 10px 11px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            color: var(--ink);
+            font-size: .86rem;
+            line-height: 1.35;
+            text-decoration: none;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .conversation-link:hover, .conversation-link:focus-visible, .conversation-link.is-active {
+            border-color: #bfdbdf;
+            color: var(--blue-dark);
+            background: var(--soft);
+            outline: none;
+        }
+
+        [data-empty-state] {
+            padding: 10px 2px;
+            color: var(--muted);
+            font-size: .84rem;
+            line-height: 1.5;
+        }
+
+        .account {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 18px;
+            border-top: 1px solid var(--line);
+        }
+
+        .account-name {
+            overflow: hidden;
+            color: var(--muted);
+            font-size: .8rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: clamp(20px, 3vw, 32px);
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            gap: 16px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .eyebrow {
+            margin: 0 0 6px;
+            color: var(--teal);
+            font-size: .73rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--ink);
+            font-size: clamp(1.35rem, 3vw, 1.8rem);
+            letter-spacing: -.04em;
+        }
+
+        .scope {
+            max-width: 470px;
+            margin: 7px 0 0;
+            color: var(--muted);
+            font-size: .91rem;
+            line-height: 1.55;
+        }
+
+        .new-button {
+            flex: 0 0 auto;
+        }
+
+        .chat-guidance {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin: 15px 0;
+        }
+
+        .guide-chip {
+            padding: 6px 9px;
+            border-radius: 999px;
+            color: #46616c;
+            background: #f1f6f6;
+            font-size: .78rem;
+            line-height: 1.25;
+        }
+
+        #chat-messages {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 280px;
+            max-height: 52vh;
+            overflow-y: auto;
+            padding: 6px 2px 14px;
+            scroll-behavior: smooth;
+        }
+
+        /* 동적·저장 메시지는 원문 줄바꿈을 보존하고 긴 주소도 영역 안에서 줄바꿈한다. */
+        .message {
+            width: fit-content;
+            max-width: min(82%, 620px);
+            margin: 0;
+            padding: 11px 13px;
+            border-radius: 12px;
+            font-size: .94rem;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+            text-align: left;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            color: #fff;
+            background: var(--blue);
+            border-bottom-right-radius: 3px;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background: #f0f5f5;
+            border-bottom-left-radius: 3px;
+        }
+
+        /* 정적 환영말에는 템플릿 들여쓰기 공백을 남기지 않는다. */
+        .welcome-message {
+            max-width: min(90%, 620px);
+            color: #38515c;
+            white-space: normal;
+        }
+
+        .welcome-message p + p {
+            margin-top: 7px;
+        }
+
+        .composer {
+            display: grid;
+            grid-template-columns:minmax(0, 1fr) auto;
+            gap: 9px;
+            align-items: end;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        #user-input {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            min-height: 48px;
+            max-height: 160px;
+            resize: vertical;
+            padding: 12px 13px;
+            border: 1px solid #b9c8ce;
+            border-radius: 10px;
+            color: var(--ink);
+            background: #fff;
+            font-size: .95rem;
+            line-height: 1.45;
+        }
+
+        #user-input::placeholder {
+            color: #82919a;
+        }
+
+        #user-input:focus-visible, button:focus-visible, .conversation-link:focus-visible {
+            outline: 3px solid rgba(22, 125, 120, .28);
+            outline-offset: 2px;
+        }
+
+        .button {
+            min-height: 42px;
+            padding: 9px 13px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            font-size: .84rem;
+            font-weight: 750;
+            transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+        }
+
+        .button-primary {
+            color: #fff;
+            background: var(--blue);
+        }
+
+        .button-primary:hover {
+            background: var(--blue-dark);
+        }
+
+        .button-outline {
+            color: var(--blue-dark);
+            background: #fff;
+            border-color: #aebfc5;
+        }
+
+        .button-outline:hover {
+            background: #f2f7f7;
+        }
+
+        .button-quiet {
+            min-height: auto;
+            padding: 5px 0;
+            color: var(--muted);
+            background: transparent;
+        }
+
+        .button-quiet:hover {
+            color: var(--ink);
+        }
+
+        .button-danger {
+            color: var(--danger);
+            background: transparent;
+            border-color: #dfb9bd;
+        }
+
+        .button-danger:hover {
+            background: #fff4f4;
+        }
+
+        button:disabled {
+            cursor: wait;
+            opacity: .55;
+        }
+
+        #loading {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: .82rem;
+        }
+
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #cddadc;
+            border-top-color: var(--teal);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+
+        #status {
+            min-height: 1.3em;
+            margin-top: 9px;
+            color: var(--muted);
+            font-size: .82rem;
+            line-height: 1.45;
+        }
+
+        #status.error {
+            color: var(--danger);
+        }
+
+        #status.success {
+            color: var(--teal);
+        }
+
+        .chat-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .app-shell {
+                grid-template-columns:minmax(0, 1fr);
+                width: min(100% - 24px, 620px);
+                min-height: calc(100vh - 24px);
+                margin: 12px auto;
+            }
+
+            .chat-panel {
+                order: 1;
+                min-height: calc(100vh - 24px);
+                padding: 20px 16px;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+
+            .chat-header {
+                align-items: flex-start;
+            }
+
+            #chat-messages {
+                min-height: 260px;
+                max-height: 48vh;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .chat-header {
+                display: block;
+            }
+
+            .new-button {
+                width: 100%;
+                margin-top: 14px;
+            }
+
+            .composer {
+                grid-template-columns:minmax(0, 1fr);
+            }
+
+            .composer .button {
+                width: 100%;
+            }
+
+            .message, .welcome-message {
+                max-width: 92%;
+            }
+        }
+
+        .mode-switch { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+        .mode-link { padding:5px 9px; border:1px solid #c9d7da; border-radius:999px; color:var(--muted); font-size:.76rem; font-weight:700; text-decoration:none; }
+        .mode-link:hover, .mode-link:focus-visible, .mode-link.is-current { border-color:#86b7b4; color:var(--blue-dark); background:var(--soft); outline:none; }
+    </style>
+</head>
+<body>
+<main class="app-shell">
+    <aside class="sidebar" aria-label="상담 탐색">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">IT</span>진로 상담</div>
+        <p class="sidebar-heading">지난 상담</p>
+        <nav id="conversation-list" aria-label="지난 상담 목록">
+            {% for conversation in conversations %}
+                <a class="conversation-link" data-session-id="{{ conversation.pk }}"
+                   href="{% url 'app:index' %}?restore_sess_id={{ conversation.pk }}">{{ conversation.created_at|date:"m/d H:i" }}
+                    상담</a>
+            {% empty %}
+                <span data-empty-state>저장된 상담이 없습니다.</span>
+            {% endfor %}
+        </nav>
+        <form class="account" action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <span class="account-name" title="{{ user.username }}">{{ user.username }}</span>
+            <button class="button button-quiet" type="submit">로그아웃</button>
+        </form>
+    </aside>
+    <section class="chat-panel" aria-labelledby="chat-title">
+        <header class="chat-header">
+            <div>
+                <p class="eyebrow">CAREER CONVERSATION</p>
+                <h1 id="chat-title">IT 진로 상담</h1>
+                <p class="scope">관심 직무, 학습 순서, 포트폴리오 방향을 함께 정리합니다.</p>
+                <nav class="mode-switch" aria-label="답변 방식 전환">
+                    <a class="mode-link is-current" data-mode-path="{% url 'app:stream_index' %}" href="{% url 'app:stream_index' %}{% if session_id %}?restore_sess_id={{ session_id|urlencode }}{% endif %}">스트리밍 답변</a>
+                    <a class="mode-link" data-mode-path="{% url 'app:index' %}" href="{% url 'app:index' %}{% if session_id %}?restore_sess_id={{ session_id|urlencode }}{% endif %}">일반 답변</a>
+                </nav>
+            </div>
+            <button id="new-conversation" class="button button-outline new-button" type="button" data-async-control>새
+                상담
+            </button>
+        </header>
+        <div class="chat-guidance" aria-label="상담 예시">
+            <span class="guide-chip">예: 백엔드 개발 학습 순서</span>
+            <span class="guide-chip">예: 데이터 분석 포트폴리오</span>
+        </div>
+        <div id="chat-messages" aria-live="polite" aria-label="상담 메시지">
+            {% for message in chat_messages %}
+                <div class="message {% if message.message_type == 'human' %}user{% else %}bot{% endif %}-message">{{ message.content }}</div>
+            {% empty %}
+                <div class="message bot-message welcome-message"><p>안녕하세요. IT 진로 상담을 시작해 보겠습니다.</p>
+                    <p>관심 직무나 현재 학습 경험을 바탕으로 궁금한 점을 편하게 적어주세요.</p></div>
+            {% endfor %}
+        </div>
+        <form id="composer-form" class="composer">
+            <label class="sr-only" for="user-input">상담 질문</label>
+            <textarea id="user-input" rows="2" maxlength="2000" placeholder="IT 직무·학습·취업 고민을 적어주세요"
+                      aria-describedby="input-help"></textarea>
+            <button class="button button-primary" type="submit" data-async-control>전송</button>
+        </form>
+        <span id="input-help" class="sr-only">Enter 키로 전송하고, Shift와 Enter 키로 줄바꿈할 수 있습니다.</span>
+        <div id="loading" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>답변을 준비하고 있습니다.</span>
+        </div>
+        <div class="chat-actions">
+            <button id="end-conversation" class="button button-danger" type="button" data-async-control>현재 상담 삭제
+            </button>
+        </div>
+        <div id="status" role="status" aria-live="polite"></div>
+    </section>
+</main>
+{{ session_id|json_script:"active-session" }}
+<script>
+    // 템플릿은 초기 상담 ID를 전달하고, 이후 요청은 같은 출처의 Fetch로 JSON을 받아 화면에 표시한다.
+    let sessionId = JSON.parse(document.getElementById('active-session').textContent);
+    let busy = false;
+    let isComposing = false;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const messages = document.getElementById('chat-messages');
+    const conversations = document.getElementById('conversation-list');
+    const input = document.getElementById('user-input');
+    const status = document.getElementById('status');
+
+    function showLoading(value) {
+        busy = value;
+        document.getElementById('loading').style.display = value ? 'flex' : 'none';
+        document.querySelectorAll('[data-async-control]').forEach(control => {
+            control.disabled = value;
+        });
+    }
+
+    function showStatus(message, type = '') {
+        status.textContent = message;
+        status.className = type;
+    }
+
+    function addMessage(content, isUser) {
+        const line = document.createElement('div');
+        line.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        // 사용자 입력과 모델 출력은 HTML로 해석하지 않아 XSS를 막고, CSS가 원문 줄바꿈을 보존한다.
+        line.textContent = content;
+        messages.append(line);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function markActiveConversation() {
+        conversations.querySelectorAll('[data-session-id]').forEach(link => {
+            link.classList.toggle(
+                'is-active', Boolean(sessionId) && link.dataset.sessionId === String(sessionId)
+            );
+        });
+    }
+
+    function addConversationLink(id) {
+        conversations.querySelector('[data-empty-state]')?.remove();
+        const existing = conversations.querySelector(`[data-session-id="${CSS.escape(String(id))}"]`);
+        if (existing) {
+            existing.remove();
+        }
+
+        const link = document.createElement('a');
+        link.className = 'conversation-link';
+        link.dataset.sessionId = id;
+        link.href = `?restore_sess_id=${encodeURIComponent(id)}`;
+        link.textContent = '방금 시작한 상담';
+        conversations.prepend(link);
+        markActiveConversation();
+    }
+
+    function removeConversationLink(id) {
+        conversations.querySelectorAll('a[data-session-id]').forEach(link => {
+            if (link.dataset.sessionId === String(id)) {
+                link.remove();
+            }
+        });
+
+        if (!conversations.querySelector('a[data-session-id]')) {
+            const empty = document.createElement('span');
+            empty.dataset.emptyState = '';
+            empty.textContent = '저장된 상담이 없습니다.';
+            conversations.append(empty);
+        }
+    }
+
+    async function api(url, options = {}) {
+        // 세션 쿠키와 CSRF 토큰을 함께 보내며, 204 응답은 본문 없이 성공으로 처리한다.
+        const response = await fetch(url, {
+            ...options,
+            credentials: 'same-origin',
+            headers: {...(options.headers || {}), 'X-CSRFToken': csrfToken}
+        });
+        if (response.status === 204) {
+            return null;
+        }
+        if (!response.headers.get('content-type')?.includes('application/json')) {
+            throw new Error(response.status === 404 ?
+                '상담을 찾을 수 없습니다.' : '로그인 상태와 CSRF 설정을 확인하세요.');
+        }
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || '요청을 처리하지 못했습니다.');
+        }
+        return data;
+    }
+
+    async function newConversation() {
+        if (busy) {
+            return;
+        }
+        showLoading(true);
+        try {
+            const data = await api("{% url 'app:init_chat' %}", {method: 'POST'});
+            sessionId = data.session_id;
+            addConversationLink(sessionId);
+            messages.replaceChildren();
+            addMessage('새 상담을 시작했습니다. 궁금한 점을 남겨주세요.', false);
+            // 새로고침에도 현재 상담을 복원하도록 주소에 세션 ID를 남긴다.
+            history.replaceState(null, '', `?restore_sess_id=${encodeURIComponent(sessionId)}`);
+            showStatus('새 상담이 생성되었습니다.', 'success');
+            input.focus();
+        } catch (error) {
+            showStatus(error.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function sendMessage() {
+        const query = input.value.trim();
+        if (busy) {
+            return;
+        }
+        if (!sessionId) {
+            showStatus('먼저 새 상담을 시작하세요.', 'error');
+            return;
+        }
+        if (!query || query.length > 2000) {
+            showStatus('질문은 1~2000자로 입력하세요.', 'error');
+            return;
+        }
+
+        showLoading(true);
+        try {
+            const body = new FormData();
+            body.append('session_id', sessionId);
+            body.append('query', query);
+            const data = await api("{% url 'app:chat' %}", {method: 'POST', body});
+            // 서버 저장 성공 뒤에만 질문과 답변을 표시한다. 실패한 경우 입력값은 남아 있다.
+            addMessage(query, true);
+            addMessage(data.content, false);
+            input.value = '';
+            showStatus('');
+        } catch (error) {
+            showStatus(error.message, 'error');
+        } finally {
+            showLoading(false);
+            input.focus();
+        }
+    }
+
+
+    document.getElementById('new-conversation').addEventListener('click', newConversation);
+    document.getElementById('composer-form').addEventListener('submit', event => {
+        event.preventDefault();
+        if (!isComposing) {
+            sendMessage();
+        }
+    });
+    input.addEventListener('compositionstart', () => {
+        isComposing = true;
+    });
+    input.addEventListener('compositionend', () => {
+        isComposing = false;
+    });
+    input.addEventListener('keydown', event => {
+        const isImeInput = event.isComposing || event.keyCode === 229 || isComposing;
+        if (event.key === 'Enter' && !event.shiftKey && !isImeInput) {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+    markActiveConversation();
+    // 저장된 상담을 열면 가장 최근 메시지부터 볼 수 있도록 스크롤을 내린다.
+    messages.scrollTop = messages.scrollHeight;
+
+    async function endConversation() {
+        if (busy || !sessionId) {
+            return;
+        }
+        const deletingSessionId = sessionId;
+        showLoading(true);
+        try {
+            await api("{% url 'app:del_chat' %}", {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({session_id: deletingSessionId})
+            });
+            removeConversationLink(deletingSessionId);
+            sessionId = '';
+            messages.replaceChildren();
+            addMessage('상담 내역을 삭제했습니다. 새 상담을 시작하면 다시 질문할 수 있습니다.', false);
+            history.replaceState(null, '', "{% url 'app:index' %}");
+            markActiveConversation();
+            showStatus('');
+        } catch (error) {
+            showStatus(error.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    document.getElementById('end-conversation').addEventListener('click', endConversation);
+</script>
+</body>
+</html>
